@@ -560,26 +560,12 @@
                 </div>
                 <div class="details">
                     <h4>📋 Process Information for Vendor</h4>
-                    <p>Registration is via link in given in Mail</p>
-                    <p>After Login Vendor can see the Process Information. </p>
-                    
-                    <ul>
-                        <li>Vendor Information</li>
-                        <li>Document Details</li>  
-                    </ul>
-                    <p>On <strong>Complete Profile</strong> Vendor can add Details of company:</p>
-                    <p>Enter PAN and UDYAM number →<strong> Verify </strong>→ Among GSTIN Number's Select Valid →
-                        <strong> Save Selected GSTIN Number </strong>→ GSTIN Details, 
-                        UDYAM Details, CIN Details can be viewed,
-                         →<strong> Continue to Document Upload</strong>
-                        
-                        <ul>
-                            <li><strong>Documents Required:</strong> PAN, UDYAM, GSTIN, CIN, Bank Documents</li>
-                        </ul>
-                    <p>On <strong>Upload All Documents</strong> Vendor can add <strong>Bank Details</strong> of company</strong></p>
-                    <p>Verify Details and <strong>Proceed for PAYMENT</strong></p>
-                    <p>Wait for <strong>ADMIN's APPROVAL</strong></p>
+                    <p>Please select a process to get started:</p>
                     <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleLogin()">Login</button>
+                        <button class="response-btn" onclick="event.stopPropagation(); handleAddCompanyDetails()">Add Company Details</button>
+                        <button class="response-btn" onclick="event.stopPropagation(); handleDocumentUpload()">Document Upload</button>
+                        <button class="response-btn" onclick="event.stopPropagation(); handlePaymentError()">Payment Error</button>
                         <button class="response-btn" onclick="event.stopPropagation(); goBack()">← Go Back</button>
                     </div>
                 </div>
@@ -627,6 +613,116 @@
             container.innerHTML = html;
             container.style.display = 'block';
         }
+
+        function handleLogin() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process → Login</strong>
+                </div>
+                <div class="details">
+                    <h4>🔐 Login Process</h4>
+                        <p>Registration is via link in given in Mail</p>
+                        <p>After Login Vendor can see the Process Information. </p>
+                    
+                        <ul>
+                            <li>Vendor Information</li>
+                            <li>Document Details</li>  
+                        </ul>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleProcess()">← Back to Process</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function handleAddCompanyDetails() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process → Add Company Details</strong>
+                </div>
+                <div class="details">
+                    <h4>🏢 Add Company Details</h4>
+                    <p>Enter PAN and UDYAM number →<strong> Verify </strong></p>
+                    <p>Among GSTIN Number's Select Valid →
+                    <strong> Save Selected GSTIN Number </strong></p>
+                    <p>GSTIN Details, UDYAM Details, CIN Details can be viewed.</p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleProcess()">← Back to Process</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function handleDocumentUpload() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process → Document Upload</strong>
+                </div>
+                <div class="details">
+                    <h4>📄 Document Upload</h4>
+                    <p>Upload required documents for vendor verification.</p>
+                    <p><strong>Required Documents:</strong></p>
+                    <ul>
+                        <li>PAN Details</li>
+                        <li>UDYAM Document</li>
+                        <li>GSTIN Document</li>
+                        <li>CIN Document</li>
+                        <li>Bank Account Details in PDF</li>
+                        <li>Maximum file size: 5 MB per document</li>
+                    </ul>
+                    <p>On <strong>Upload All Documents</strong> Vendor can add <strong>Bank Details</strong> of company</strong></p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleProcess()">← Back to Process</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function handlePaymentError() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process → Payment Error</strong>
+                </div>
+                <div class="details">
+                    <h4>💳 Payment Error</h4>
+                    <p>Resolve payment-related issues and errors.</p>
+                    <p><strong>Common Payment Errors:</strong></p>
+                    <ul>
+                        <li>Transaction Failed</li>
+                        <li>Insufficient Funds</li>
+                        <li>Card Declined</li>
+                        <li>Network Timeout</li>
+                        <li>Invalid Payment Method</li>
+                        <li>Payment Gateway Error</li>
+                    </ul>
+                    <p><strong>Resolution Steps:</strong></p>
+                    <ul>
+                        <li>Check payment method validity</li>
+                        <li>Verify account balance</li>
+                        <li>Contact bank for authorization</li>
+                        <li>Try alternative payment method</li>
+                        <li>Contact support if issue persists</li>
+                    </ul>
+                    <p><strong>Support Contact:</strong> payment-support@example.com</p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleProcess()">← Back to Process</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
 
         function goBack() {
             const container = document.getElementById('informationDisplay');
