@@ -1,0 +1,964 @@
+<?php
+// Start session for user interactions
+session_start();
+
+// Initialize session variables if not set
+if (!isset($_SESSION['chat_history'])) {
+    $_SESSION['chat_history'] = [];
+}
+
+if (!isset($_SESSION['user_preferences'])) {
+    $_SESSION['user_preferences'] = [
+        'theme' => 'default',
+        'language' => 'en',
+        'notifications' => true
+    ];
+}
+
+// Handle AJAX requests
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    
+    switch ($_POST['action']) {
+        case 'save_chat':
+            $message = $_POST['message'] ?? '';
+            $response = $_POST['response'] ?? '';
+            $_SESSION['chat_history'][] = [
+                'timestamp' => date('Y-m-d H:i:s'),
+                'user_message' => $message,
+                'bot_response' => $response
+            ];
+            echo json_encode(['status' => 'success']);
+            break;
+            
+        case 'get_chat_history':
+            echo json_encode($_SESSION['chat_history']);
+            break;
+            
+        case 'update_preferences':
+            $pref = $_POST['preference'] ?? '';
+            $value = $_POST['value'] ?? '';
+            if (isset($_SESSION['user_preferences'][$pref])) {
+                $_SESSION['user_preferences'][$pref] = $value;
+            }
+            echo json_encode(['status' => 'success']);
+            break;
+            
+        default:
+            echo json_encode(['status' => 'error', 'message' => 'Unknown action']);
+    }
+    exit;
+}
+
+// Get current user info (you can integrate with your user system)
+$current_user = [
+    'name' => $_SESSION['user_name'] ?? 'Guest',
+    'email' => $_SESSION['user_email'] ?? '',
+    'role' => $_SESSION['user_role'] ?? 'visitor'
+];
+
+// Server-side data (can be moved to database)
+$server_data = [
+    "Technology" => [
+        "Software" => [
+            "Web Development" => [
+                "tools" => ["React", "Vue.js", "Angular", "Node.js"],
+                "services" => ["Frontend Development", "Backend Development", "Full Stack Development"],
+                "pricing" => ["Basic" => 1000, "Standard" => 2500, "Premium" => 5000]
+            ],
+            "Mobile Development" => [
+                "tools" => ["React Native", "Flutter", "Swift", "Kotlin"],
+                "services" => ["iOS Development", "Android Development", "Cross-platform Development"],
+                "pricing" => ["Basic" => 1500, "Standard" => 3000, "Premium" => 6000]
+            ],
+            "Data Science" => [
+                "tools" => ["Python", "R", "TensorFlow", "PyTorch"],
+                "services" => ["Machine Learning", "Data Analysis", "AI Solutions"],
+                "pricing" => ["Basic" => 2000, "Standard" => 4000, "Premium" => 8000]
+            ]
+        ],
+        "Hardware" => [
+            "Computers" => [
+                "types" => ["Desktop", "Laptop", "Workstation", "Server"],
+                "brands" => ["Dell", "HP", "Lenovo", "Apple"],
+                "pricing" => ["Budget" => 500, "Mid-range" => 1200, "High-end" => 3000]
+            ],
+            "Networking" => [
+                "types" => ["Router", "Switch", "Firewall", "Access Point"],
+                "brands" => ["Cisco", "Netgear", "TP-Link", "Ubiquiti"],
+                "pricing" => ["Basic" => 100, "Professional" => 300, "Enterprise" => 1000]
+            ]
+        ]
+    ],
+    "Business" => [
+        "Consulting" => [
+            "Strategy" => [
+                "services" => ["Market Analysis", "Business Planning", "Growth Strategy"],
+                "duration" => ["1 month", "3 months", "6 months"],
+                "pricing" => ["Hourly" => 150, "Project" => 5000, "Retainer" => 2000]
+            ],
+            "Operations" => [
+                "services" => ["Process Optimization", "Supply Chain", "Quality Management"],
+                "duration" => ["2 weeks", "1 month", "2 months"],
+                "pricing" => ["Hourly" => 120, "Project" => 3000, "Retainer" => 1500]
+            ]
+        ],
+        "Marketing" => [
+            "Digital Marketing" => [
+                "services" => ["SEO", "Social Media", "PPC", "Content Marketing"],
+                "platforms" => ["Google", "Facebook", "Instagram", "LinkedIn"],
+                "pricing" => ["Starter" => 500, "Growth" => 1500, "Scale" => 3000]
+            ],
+            "Traditional Marketing" => [
+                "services" => ["Print Ads", "TV Commercials", "Radio", "Billboards"],
+                "channels" => ["Local", "National", "International"],
+                "pricing" => ["Local" => 1000, "National" => 5000, "International" => 15000]
+            ]
+        ]
+    ],
+    "Healthcare" => [
+        "Medical Equipment" => [
+            "Diagnostic" => [
+                "types" => ["X-ray", "MRI", "CT Scan", "Ultrasound"],
+                "brands" => ["GE", "Siemens", "Philips", "Canon"],
+                "pricing" => ["Basic" => 50000, "Advanced" => 200000, "Premium" => 500000]
+            ],
+            "Therapeutic" => [
+                "types" => ["Surgical", "Rehabilitation", "Monitoring", "Treatment"],
+                "brands" => ["Medtronic", "Johnson & Johnson", "Baxter", "Fresenius"],
+                "pricing" => ["Basic" => 10000, "Advanced" => 50000, "Premium" => 150000]
+            ]
+        ],
+        "Services" => [
+            "Telemedicine" => [
+                "services" => ["Online Consultations", "Remote Monitoring", "Digital Health"],
+                "platforms" => ["Zoom", "Teams", "Custom Platform"],
+                "pricing" => ["Per Visit" => 50, "Monthly" => 200, "Annual" => 2000]
+            ],
+            "Clinical Trials" => [
+                "services" => ["Phase I", "Phase II", "Phase III", "Phase IV"],
+                "duration" => ["6 months", "1 year", "2 years", "3+ years"],
+                "pricing" => ["Phase I" => 100000, "Phase II" => 500000, "Phase III" => 2000000]
+            ]
+        ]
+    ]
+];
+
+// Convert PHP data to JSON for JavaScript
+$json_data = json_encode($server_data);
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive ChatBot Popup - PHP Version</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .main-content h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .main-content p {
+            color: #666;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .user-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+
+        .user-info h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .user-info p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Chatbot Popup Styles */
+        .chatbot-popup {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+            height: 480px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .chatbot-popup.open {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .chatbot-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chatbot-header h3 {
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .chatbot-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chatbot-content {
+            padding: 10px;
+            overflow-y: auto;
+            flex: 1;
+            max-height: 350px;
+            scrollbar-width: thin;
+            scrollbar-color: #667eea #f1f1f1;
+        }
+
+        .chatbot-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chatbot-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .chatbot-content::-webkit-scrollbar-thumb {
+            background: #667eea;
+            border-radius: 3px;
+        }
+
+        .chatbot-content::-webkit-scrollbar-thumb:hover {
+            background: #5a6fd8;
+        }
+
+        .chatbot-sidebar {
+            background: #f8f9fa;
+            padding: 10px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .chatbot-sidebar select, .chatbot-sidebar button {
+            width: 100%;
+            padding: 6px;
+            margin: 3px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .chatbot-sidebar button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .chatbot-sidebar button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            border-left: 3px solid #667eea;
+            font-size: 12px;
+        }
+
+        .path {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+            padding: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+            border-left: 3px solid #28a745;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .details {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            border: 1px solid #e9ecef;
+            font-size: 12px;
+        }
+
+        .chart {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 8px 0;
+            border: 1px solid #e9ecef;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 3px;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .quick-actions {
+            margin: 10px 0;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .action-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .category-details {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            border: 1px solid #e9ecef;
+        }
+
+        .option-btn {
+            background: white;
+            color: #667eea;
+            border: 1px solid #667eea;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .option-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .response-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .response-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .response-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Chat Toggle Button */
+        .chat-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            z-index: 1001;
+            transition: all 0.3s ease;
+        }
+
+        .chat-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .chat-toggle.hidden {
+            display: none;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .chatbot-popup {
+                width: 85vw;
+                height: 70vh;
+                right: 7.5vw;
+                bottom: 7.5vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <h1>🤖 Interactive ChatBot Demo - PHP Version</h1>
+        <p>This is a PHP-powered demo page. Click the chat button in the bottom right corner to open the chatbot popup!</p>
+        <p>The chatbot contains predefined data for Technology, Business, and Healthcare sectors.</p>
+        <p>You can select categories, options, and sub-options to see related information.</p>
+        
+        <!-- User Information Display -->
+        <div class="user-info">
+            <h3>👤 Current User Information</h3>
+            <p><strong>Name:</strong> <?php echo htmlspecialchars($current_user['name']); ?></p>
+            <p><strong>Email:</strong> <?php echo htmlspecialchars($current_user['email'] ?: 'Not provided'); ?></p>
+            <p><strong>Role:</strong> <?php echo htmlspecialchars($current_user['role']); ?></p>
+            <p><strong>Session ID:</strong> <?php echo session_id(); ?></p>
+        </div>
+    </div>
+
+    <!-- Chat Toggle Button -->
+    <button class="chat-toggle" onclick="toggleChatbot()" id="chatToggle">
+        💬
+    </button>
+
+    <!-- Chatbot Popup -->
+    <div class="chatbot-popup" id="chatbotPopup">
+        <div class="chatbot-header">
+            <h3>🤖 PhonePe</h3>
+            <button class="close-btn" onclick="toggleChatbot()">×</button>
+        </div>
+        
+        <div class="chatbot-body">
+            <div class="chatbot-content">
+                <div id="selectionInfo">
+                    <div class="info-box">
+                        <h4>Welcome! 👋</h4>
+                        <p>How can I help you!!</p>
+                        <p><small>PHP Session: <?php echo session_id(); ?></small></p>
+                    </div>
+                </div>
+                
+                <div class="quick-actions">
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="event.stopPropagation(); handleProcess()">Process</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); handleXyz()">XYZ</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); handleSupport()">Connect to Support</button>
+                    </div>
+                </div>
+                
+                <div id="categoryInfo" style="display: none;">
+                    <div class="category-details">
+                        <h4 id="categoryTitle"></h4>
+                        <div id="categoryOptions"></div>
+                    </div>
+                </div>
+                
+                <div id="informationDisplay" style="display: none;">
+                    <!-- Related information will appear here -->
+                </div>
+                
+            </div>
+            
+            
+        </div>
+    </div>
+
+    <script>
+        // Server-side data from PHP
+        const data = <?php echo $json_data; ?>;
+        
+        // PHP Session ID for tracking
+        const sessionId = '<?php echo session_id(); ?>';
+        
+        // Function to send data to PHP backend
+        async function sendToPHP(action, data = {}) {
+            try {
+                const response = await fetch('', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        action: action,
+                        ...data
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error communicating with PHP:', error);
+                return { status: 'error', message: error.message };
+            }
+        }
+
+        function toggleChatbot() {
+            const popup = document.getElementById('chatbotPopup');
+            const toggle = document.getElementById('chatToggle');
+            
+            if (popup.classList.contains('open')) {
+                popup.classList.remove('open');
+                toggle.style.display = 'block';
+            } else {
+                popup.classList.add('open');
+                toggle.style.display = 'none';
+            }
+        }
+
+        function updateOptions() {
+            const category = document.getElementById('category').value;
+            const optionSelect = document.getElementById('option');
+            const subOptionSelect = document.getElementById('subOption');
+            
+            optionSelect.innerHTML = '<option value="">Choose an option...</option>';
+            subOptionSelect.innerHTML = '<option value="">Choose a sub-option...</option>';
+            
+            if (category && data[category]) {
+                Object.keys(data[category]).forEach(option => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option;
+                    optionElement.textContent = option;
+                    optionSelect.appendChild(optionElement);
+                });
+            }
+        }
+
+        function updateSubOptions() {
+            const category = document.getElementById('category').value;
+            const option = document.getElementById('option').value;
+            const subOptionSelect = document.getElementById('subOption');
+            
+            subOptionSelect.innerHTML = '<option value="">Choose a sub-option...</option>';
+            
+            if (category && option && data[category] && data[category][option]) {
+                Object.keys(data[category][option]).forEach(subOption => {
+                    const subOptionElement = document.createElement('option');
+                    subOptionElement.value = subOption;
+                    subOptionElement.textContent = subOption;
+                    subOptionSelect.appendChild(subOptionElement);
+                });
+            }
+        }
+
+        function showCategory(category) {
+            const categoryInfo = document.getElementById('categoryInfo');
+            const categoryTitle = document.getElementById('categoryTitle');
+            const categoryOptions = document.getElementById('categoryOptions');
+            
+            categoryTitle.textContent = `${category} Options:`;
+            
+            let optionsHtml = '';
+            Object.keys(data[category]).forEach(option => {
+                optionsHtml += `<button class="option-btn" onclick="event.stopPropagation(); showOption('${category}', '${option}')">${option}</button>`;
+            });
+            
+            categoryOptions.innerHTML = optionsHtml;
+            categoryInfo.style.display = 'block';
+        }
+
+        function showOption(category, option) {
+            const categoryInfo = document.getElementById('categoryInfo');
+            const categoryTitle = document.getElementById('categoryTitle');
+            const categoryOptions = document.getElementById('categoryOptions');
+            
+            categoryTitle.textContent = `${category} → ${option}`;
+            
+            let subOptionsHtml = '';
+            Object.keys(data[category][option]).forEach(subOption => {
+                subOptionsHtml += `<button class="option-btn" onclick="event.stopPropagation(); showDetails('${category}', '${option}', '${subOption}')">${subOption}</button>`;
+            });
+            
+            categoryOptions.innerHTML = subOptionsHtml;
+        }
+
+        function handleProcess() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process</strong>
+                </div>
+                <div class="details">
+                    <h4>📋 Process Information for Vendor</h4>
+                    <p>Please select a process to get started:</p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleLogin()">Login</button>
+                        <button class="response-btn" onclick="event.stopPropagation(); handleAddCompanyDetails()">Add Company Details</button>
+                        <button class="response-btn" onclick="event.stopPropagation(); handleDocumentUpload()">Document Upload</button>
+                        <button class="response-btn" onclick="event.stopPropagation(); handlePaymentError()">Payment Error</button>
+                        <button class="response-btn" onclick="event.stopPropagation(); goBack()">← Go Back</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+            
+            // Log interaction to PHP session
+            sendToPHP('save_chat', {
+                message: 'User selected Process',
+                response: 'Process options displayed'
+            });
+        }
+
+        function handleXyz() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>🔧 XYZ</strong>
+                </div>
+                <div class="details">
+                    <h4>📋 XYZ Information</h4>
+                    <p>This is the XYZ section. Here you can find additional information and resources.</p>
+                    <p>Please specify what you're looking for in the XYZ category.</p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); goBack()">← Go Back</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+            
+            // Log interaction to PHP session
+            sendToPHP('save_chat', {
+                message: 'User selected XYZ',
+                response: 'XYZ information displayed'
+            });
+        }
+
+        function handleSupport() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>🎧 Connect to Support</strong>
+                </div>
+                <div class="details">
+                    <h4>📋 Support Information</h4>
+                    <p>Our support team is here to help you!</p>
+                    <p><strong>Email:</strong> support@example.com</p>
+                    <p><strong>Phone:</strong> +1 (555) 123-4567</p>
+                    <p><strong>Hours:</strong> Monday - Friday, 9 AM - 6 PM</p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); goBack()">← Go Back</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+            
+            // Log interaction to PHP session
+            sendToPHP('save_chat', {
+                message: 'User requested support',
+                response: 'Support information displayed'
+            });
+        }
+
+        function handleLogin() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process → Login</strong>
+                </div>
+                <div class="details">
+                    <h4>🔐 Login Process</h4>
+                        <p>Registration is via link in given in Mail</p>
+                        <p>After Login Vendor can see the Process Information. </p>
+                    
+                        <ul>
+                            <li>Vendor Information</li>
+                            <li>Document Details</li>  
+                        </ul>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleProcess()">← Back to Process</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function handleAddCompanyDetails() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process → Add Company Details</strong>
+                </div>
+                <div class="details">
+                    <h4>🏢 Add Company Details</h4>
+                    <p>Enter PAN and UDYAM number →<strong> Verify </strong></p>
+                    <p>Among GSTIN Number's Select Valid →
+                    <strong> Save Selected GSTIN Number </strong></p>
+                    <p>GSTIN Details, UDYAM Details, CIN Details can be viewed.</p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleProcess()">← Back to Process</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function handleDocumentUpload() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process → Document Upload</strong>
+                </div>
+                <div class="details">
+                    <h4>📄 Document Upload</h4>
+                    <p>Upload required documents for vendor verification.</p>
+                    <p><strong>Required Documents:</strong></p>
+                    <ul>
+                        <li>PAN Details</li>
+                        <li>UDYAM Document</li>
+                        <li>GSTIN Document</li>
+                        <li>CIN Document</li>
+                        <li>Bank Account Details in PDF</li>
+                        <li>Maximum file size: 5 MB per document</li>
+                    </ul>
+                    <p>On <strong>Upload All Documents</strong> Vendor can add <strong>Bank Details</strong> of company</strong></p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleProcess()">← Back to Process</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function handlePaymentError() {
+            const container = document.getElementById('informationDisplay');
+            const html = `
+                <div class="path">
+                    <strong>⚙️ Process → Payment Error</strong>
+                </div>
+                <div class="details">
+                    <h4>💳 Payment Error</h4>
+                    <p>Resolve payment-related issues and errors.</p>
+                    <p><strong>Common Payment Errors:</strong></p>
+                    <ul>
+                        <li>Transaction Failed</li>
+                        <li>Insufficient Funds</li>
+                        <li>Card Declined</li>
+                        <li>Network Timeout</li>
+                        <li>Invalid Payment Method</li>
+                        <li>Payment Gateway Error</li>
+                    </ul>
+                    <p><strong>Resolution Steps:</strong></p>
+                    <ul>
+                        <li>Check payment method validity</li>
+                        <li>Verify account balance</li>
+                        <li>Contact bank for authorization</li>
+                        <li>Try alternative payment method</li>
+                        <li>Contact support if issue persists</li>
+                    </ul>
+                    <p><strong>Support Contact:</strong> payment-support@example.com</p>
+                    <div class="response-buttons">
+                        <button class="response-btn" onclick="event.stopPropagation(); handleProcess()">← Back to Process</button>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function goBack() {
+            const container = document.getElementById('informationDisplay');
+            container.style.display = 'none';
+        }
+
+        function showDetails(category, option, subOption) {
+            const relatedInfo = data[category][option][subOption];
+            displaySelectionInfo(category, option, subOption, relatedInfo);
+        }
+
+        function displaySelectionInfo(category, option, subOption, relatedInfo) {
+            const container = document.getElementById('informationDisplay');
+            
+            let path = category;
+            if (option) path += ` → ${option}`;
+            if (subOption) path += ` → ${subOption}`;
+            
+            let html = `
+                <div class="path">
+                    <strong>📍 Path:</strong> ${path}
+                </div>
+                <div class="details">
+                    <h4>📋 Related Information</h4>
+            `;
+            
+            Object.keys(relatedInfo).forEach(key => {
+                const value = relatedInfo[key];
+                html += `<h5>🔹 ${key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}:</h5>`;
+                
+                if (typeof value === 'object' && !Array.isArray(value)) {
+                    Object.keys(value).forEach(subKey => {
+                        const subValue = value[subKey];
+                        if (Array.isArray(subValue)) {
+                            html += `<p><strong>${subKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> ${subValue.join(', ')}</p>`;
+                        } else {
+                            html += `<p><strong>${subKey.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}:</strong> $${subValue.toLocaleString()}</p>`;
+                        }
+                    });
+                } else if (Array.isArray(value)) {
+                    html += `<p>${value.join(', ')}</p>`;
+                } else {
+                    html += `<p>${value}</p>`;
+                }
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        function showVisualization(relatedInfo) {
+            const container = document.getElementById('visualization');
+            const chartContainer = document.getElementById('chart');
+            
+            let pricingData = null;
+            Object.keys(relatedInfo).forEach(key => {
+                if (key.toLowerCase().includes('pricing') && typeof relatedInfo[key] === 'object') {
+                    pricingData = relatedInfo[key];
+                }
+            });
+            
+            if (pricingData) {
+                let html = '<h5>📊 Pricing Chart</h5><div class="chart">';
+                Object.keys(pricingData).forEach(tier => {
+                    const price = pricingData[tier];
+                    const maxPrice = Math.max(...Object.values(pricingData));
+                    const barWidth = (price / maxPrice) * 100;
+                    html += `
+                        <div style="margin: 10px 0;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <span><strong>${tier}</strong></span>
+                                <span><strong>$${price.toLocaleString()}</strong></span>
+                            </div>
+                            <div style="background: #e9ecef; height: 20px; border-radius: 10px; overflow: hidden;">
+                                <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100%; width: ${barWidth}%; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                chartContainer.innerHTML = html;
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        // Close chatbot when clicking outside
+        document.addEventListener('click', function(event) {
+            const popup = document.getElementById('chatbotPopup');
+            const toggle = document.getElementById('chatToggle');
+            
+            // Only close if clicking outside the popup and toggle button
+            if (!popup.contains(event.target) && 
+                !toggle.contains(event.target) && 
+                popup.classList.contains('open') &&
+                !event.target.closest('.action-btn') &&
+                !event.target.closest('.option-btn')) {
+                toggleChatbot();
+            }
+        });
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('PHP ChatBot initialized with session:', sessionId);
+        });
+    </script>
+</body>
+</html>
